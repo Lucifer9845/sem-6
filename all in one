@@ -251,93 +251,104 @@ int main(int argc, char **argv)
 #include<math.h>
 #include<iostream>
 #include<GL/glut.h>
+using namespace std;
 
-float v[][3] = { { -1,-1,-1 } ,{ -1,1,-1 } ,{ 1,1,-1 } ,{ 1,-1,-1 } ,{ -1,-1,1 } ,{ -1,1,1 } ,{ 1,1,1 } ,{ 1,-1,1 } }; 
-int t[] = { 0,0,0 };  
-int ax = 2;
+float pts[8][3] = {{-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1},{-1,-1,1},{-1,1,1},{1,1,1},{1,-1,1}};
+float theta[] ={0,0,0};
+int axis = 2;
+float viewer[]={5,0,0};
 
-void init()
+void myInit()
 {
     glMatrixMode(GL_PROJECTION);
-    glOrtho(-4, 4, -4, 4, -10, 10);
-    glMatrixMode(GL_MODELVIEW);  
+    glFrustum(-2,2,-2,2,2,10);
+    glMatrixMode(GL_MODELVIEW);
 }
 
-void polygon(int a, int b, int c, int d)  
+void draw_polygon(int a, int b, int c, int d)
 {
-    glBegin(GL_POLYGON);    
-    glVertex3fv(v[a]);       
-    glVertex3fv(v[b]);        
-    glVertex3fv(v[c]);
-    glVertex3fv(v[d]);
+    glBegin(GL_QUADS);
+    glVertex3fv(pts[a]);
+    glVertex3fv(pts[b]);
+    glVertex3fv(pts[c]);
+    glVertex3fv(pts[d]);
     glEnd();
 }
 
-void colorcube()       
+void draw_cube(float pts[8][3])
 {
-    glColor3f(0, 0, 1);        
-    polygon(0, 1, 2, 3);    
-    glColor3f(0, 1, 1);        
-    polygon(4, 5, 6, 7);    
-    glColor3f(0, 1, 0);       
-    polygon(0, 1, 5, 4);   
-    glColor3f(1, 0, 0);        
-    polygon(2, 6, 7, 3);    
-    glColor3f(1, 1, 0);        
-    polygon(0, 4, 7, 3);    
-    glColor3f(1, 0, 1);     
-    polygon(1, 5, 6, 2);  
+    glColor3f(0,0,1);
+    draw_polygon(0,1,2,3); //front face
+    glColor3f(0,1,0);
+    draw_polygon(4,5,6,7);    //behind face
+    glColor3f(1,0,0);
+    draw_polygon(0,1,5,4);    //left face
+    glColor3f(0,0,0);
+    draw_polygon(3,2,6,7);    //right face
+    glColor3f(0,1,1);
+    draw_polygon(0,4,7,3);    //bottom face
+    glColor3f(1,0,1);
+    draw_polygon(1,5,6,2);    //top face
+}
+
+void myDisplay()
+{
+    glClearColor(1,1,1,1);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    gluLookAt(viewer[0],viewer[1],viewer[2],0,0,0,0,1,0);
+    glRotatef(theta[2],0,0,1);
+    glRotatef(theta[1],0,1,0);
+    glRotatef(theta[0],1,0,0);
+    draw_cube(pts);
+    glFlush();
+    glutSwapBuffers();
 }
 
 void spincube()
 {
-    t[ax] += 1;    
-    if (t[ax] == 360)
-        t[ax] -= 360;    
-    glutPostRedisplay();    
+    theta[axis] = theta[axis]+4;
+    if(theta[axis]>360)
+        theta[axis]=0;
+    glutPostRedisplay();
 }
 
-void mouse(int btn, int state, int x, int y)  
+void mouse(int btn , int state , int x , int y)
 {
-    if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN)   
-        ax = 0;                                           
-    if (btn == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN)
-        ax = 1;                                            
-    if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
-        ax = 2;                                            
+    if((btn==GLUT_LEFT_BUTTON)&&(state==GLUT_DOWN))
+        axis=0;
+    if((btn==GLUT_RIGHT_BUTTON)&&(state==GLUT_DOWN))
+        axis=2;
+    if((btn==GLUT_MIDDLE_BUTTON)&&(state==GLUT_DOWN))
+        axis=1;
+    spincube();
 }
 
-void display()    // display function
+void keyboard(unsigned char key, int x, int y)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-    glClearColor(1, 1, 1, 1);    
-    glLoadIdentity();    
-    glRotatef(t[0], 1, 0, 0);    
-    glRotatef(t[1], 0, 1, 0);   
-    glRotatef(t[2], 0, 0, 1);    
-    colorcube();    
-    glutSwapBuffers();
-    glFlush();
+    if(key=='X') viewer[0]+=1;
+    if(key=='x') viewer[0]-=1;
+    if(key=='Y') viewer[1]+=1;
+    if(key=='y') viewer[1]-=1;
+    if(key=='Z') viewer[2]+=1;
+    if(key=='z') viewer[2]-=1;
+    glutPostRedisplay();
 }
 
-int main(int argc, char **argv)
+int main (int argc, char ** argv)
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH); 
-    glutInitWindowPosition(100, 100); 
-    glutInitWindowSize(500, 500);    
-    glutCreateWindow("Cube rotation");
-    init();
-    glutIdleFunc(spincube);
-    glutMouseFunc(mouse);    
-    glEnable(GL_DEPTH_TEST);    
-    glutDisplayFunc(display);
+    glutInit(&argc,argv);
+    glutInitDisplayMode( GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
+    glutInitWindowPosition(50,50);
+    glutInitWindowSize(500,500);
+    glutCreateWindow("Positioning of Camera");
+    myInit();
+    glEnable(GL_DEPTH_TEST);
+    glutDisplayFunc(myDisplay);
+    glutKeyboardFunc(keyboard);
+    glutMouseFunc(mouse);
     glutMainLoop();
-    return 0;
 }
-
-//prog3
-
 
 //prog5
 #include<stdio.h>
